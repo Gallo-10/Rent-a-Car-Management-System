@@ -11,9 +11,9 @@ import org.netbeans.lib.awtextra.AbsoluteLayout;
 
 public class CarOwner_Remove {
 
-    JButton Remove_Button, Cancel_Button;
-    JLabel ID_Label, IDValidity_Label;
-    JTextField ID_TextField;
+    private JButton Remove_Button, Cancel_Button;
+    private JLabel ID_Label, IDValidity_Label;
+    private JTextField ID_TextField;
     JFrame frame = new JFrame();
 
     public CarOwner_Remove() {
@@ -31,6 +31,11 @@ public class CarOwner_Remove {
             }
         });
 
+        initComponents();
+        addActionListeners();
+    }
+
+    private void initComponents() {
         Remove_Button = new JButton("Remove");
         Cancel_Button = new JButton("Cancel");
 
@@ -45,63 +50,68 @@ public class CarOwner_Remove {
         IDValidity_Label.setForeground(Color.red);
         frame.add(ID_Label, new AbsoluteConstraints(10, 5));
         frame.add(ID_TextField, new AbsoluteConstraints(195, 5));
-//        IDValidity_Label.setText("Invalid ID !");
         frame.add(IDValidity_Label, new AbsoluteConstraints(195, 30));
         frame.add(Remove_Button, new AbsoluteConstraints(100, 225, 100, 22));
         frame.add(Cancel_Button, new AbsoluteConstraints(250, 225, 100, 22));
-
-        Remove_Button.addActionListener(new CarOwner_Remove_ActionListener());
-
-        Cancel_Button.addActionListener(new CarOwner_Remove_ActionListener());
     }
-    private class CarOwner_Remove_ActionListener implements ActionListener {
 
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            switch (e.getActionCommand()) {
-                case "Remove": {
-                    String id = ID_TextField.getText().trim();
-                    if (CarOwner.isIDvalid(id)) {
-                        CarOwner carOwner = CarOwner.SearchByID(Integer.parseInt(id));
-                        if (carOwner != null) {
-                            int showConfirmDialog = JOptionPane.showConfirmDialog(frame, "You are about to remove the following Car Owner.\n"+carOwner.toString()+"\nAll the data including Cars and Balance for this car owner will also be deleted  !"
-                                    + "\n Are you sure you want to continue ??", "Remove Car Owner", JOptionPane.OK_CANCEL_OPTION);
-                            if (showConfirmDialog == 0) {
-                                // ** Delete all cars for this car owner **
-                                ArrayList<Car> cars = carOwner.getAllCars();
-                                System.out.println("Deleting all cars for this car owner !");
-                                for (int i = 0; i < cars.size(); i++) {
-                                    cars.get(i).Remove();
-                                }
-                                System.out.println("All cars deleted !");
-                                carOwner.Remove();
-                                System.out.println("Car owner deleted !");
-                                Parent_JFrame.getMainFrame().getContentPane().removeAll();
-                                CarOwner_Details cd = new CarOwner_Details();
-                                Parent_JFrame.getMainFrame().add(cd.getMainPanel());
-                                Parent_JFrame.getMainFrame().getContentPane().revalidate();
-                                JOptionPane.showMessageDialog(null, "Record successfully Removed !");
-                                Parent_JFrame.getMainFrame().setEnabled(true);
-                                frame.dispose();
-                            } else {
+    private void addActionListeners() {
+        Remove_Button.addActionListener(e -> handleRemove());
+        Cancel_Button.addActionListener(e -> handleCancel());
+    }
 
-                                frame.setEnabled(true);
-                            }
-
-                        } else {
-                            JOptionPane.showMessageDialog(null, "This ID does not exists !");
-                        }
-                    } else {
-                        JOptionPane.showMessageDialog(null, "Enter a valid ID !\n(A valid ID is an integer number greater than 0)");
-                    }
-                    break;
+    private void handleRemove() {
+        String id = ID_TextField.getText().trim();
+        if (CarOwner.isIDvalid(id)) {
+            CarOwner carOwner = CarOwner.SearchByID(Integer.parseInt(id));
+            if (carOwner != null) {
+                int confirm = showConfirmDialog("You are about to remove the following Car Owner.\n" + carOwner.toString() +
+                        "\nAll the data including Cars and Balance for this car owner will also be deleted  !" +
+                        "\nAre you sure you want to continue?");
+                if (confirm == JOptionPane.OK_OPTION) {
+                    removeCarOwnerAndCars(carOwner);
+                    reloadCarOwnerDetails();
+                    showMessageDialog("Record successfully Removed !");
+                    closeWindow();
                 }
-                case "Cancel": {
-                    Parent_JFrame.getMainFrame().setEnabled(true);
-                    frame.dispose();
-                    break;
-                }
+            } else {
+                showMessageDialog("This ID does not exist!");
             }
+        } else {
+            showMessageDialog("Enter a valid ID!\n(A valid ID is an integer number greater than 0)");
         }
+    }
+
+    private void handleCancel() {
+        Parent_JFrame.getMainFrame().setEnabled(true);
+        frame.dispose();
+    }
+
+    private void removeCarOwnerAndCars(CarOwner carOwner) {
+        ArrayList<Car> cars = carOwner.getAllCars();
+        for (Car car : cars) {
+            car.Remove();
+        }
+        carOwner.Remove();
+    }
+
+    private void reloadCarOwnerDetails() {
+        Parent_JFrame.getMainFrame().getContentPane().removeAll();
+        CarOwner_Details cd = new CarOwner_Details();
+        Parent_JFrame.getMainFrame().add(cd.getMainPanel());
+        Parent_JFrame.getMainFrame().getContentPane().revalidate();
+    }
+
+    private void closeWindow() {
+        Parent_JFrame.getMainFrame().setEnabled(true);
+        frame.dispose();
+    }
+
+    private void showMessageDialog(String message) {
+        JOptionPane.showMessageDialog(frame, message);
+    }
+
+    private int showConfirmDialog(String message) {
+        return JOptionPane.showConfirmDialog(frame, message, "Remove Car Owner", JOptionPane.OK_CANCEL_OPTION);
     }
 }

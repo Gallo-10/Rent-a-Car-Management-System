@@ -5,11 +5,9 @@ import BackendCode.Car;
 import BackendCode.Customer;
 import java.awt.*;
 import java.awt.event.*;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import javax.swing.*;
-import org.netbeans.lib.awtextra.AbsoluteConstraints;
-import org.netbeans.lib.awtextra.AbsoluteLayout;
+import BackendCode.TimeInterval;
+
 
 /**
  *
@@ -92,7 +90,7 @@ public class Booking_BookCar extends JFrame {
                                 }
                             } else {
                                 CarID = null;
-                                CarIDValidity_Label.setText("                                                            Car ID does not exists !");
+                                CarIDValidity_Label.setText("                                                            Car ID does not exist !");
                             }
                         } else {
                             CarID = null;
@@ -117,7 +115,7 @@ public class Booking_BookCar extends JFrame {
                                 CustomerIDValidity_Label.setText("");
                             } else {
                                 customerID = null;
-                                JOptionPane.showMessageDialog(null, "Customer ID does not exists !");
+                                JOptionPane.showMessageDialog(null, "Customer ID does not exist !");
                             }
                         } else {
                             customerID = null;
@@ -132,15 +130,18 @@ public class Booking_BookCar extends JFrame {
                     CustomerIDValidity_Label.setText("                                                            Enter Customer ID !");
                 }
 
-                if (CarID != null & customerID != null) {
+                if (CarID != null && customerID != null) {
                     setEnabled(false);
                     int showConfirmDialog = JOptionPane.showConfirmDialog(null,
                             "You are about to Book the Car: \n" + car.toString() + "\n against the Customer: \n"
                             + customer.toString() + "\n Are you sure you want to continue??",
                             "Book Confirmation", JOptionPane.OK_CANCEL_OPTION);
                     if (showConfirmDialog == 0) {
-                        Booking booking = new Booking(0, customer, car, System.currentTimeMillis(), 0);
-                        booking.Add();
+                        // Create a TimeInterval object with current time as rentTime and a placeholder value for returnTime
+                        TimeInterval timeInterval = new TimeInterval(System.currentTimeMillis(), 0);
+
+                        Booking booking = new Booking(0, customer, car, timeInterval);
+                        booking.add();
                         Parent_JFrame.getMainFrame().getContentPane().removeAll();
                         Booking_Details cd = new Booking_Details();
                         Parent_JFrame.getMainFrame().add(cd.getMainPanel());
@@ -151,8 +152,8 @@ public class Booking_BookCar extends JFrame {
                     }
                 }
             }
-        }
-        );
+        });
+
         Cancel_Button.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {

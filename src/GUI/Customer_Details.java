@@ -67,7 +67,7 @@ public class Customer_Details implements ActionListener {
             int Bill = Customer_objects.get(i).getBill();
 
             // getting booked cars for customer
-            ArrayList<Booking> bookings = Booking.SearchByCustomerID(ID);
+            ArrayList<Booking> bookings = Booking.searchByCustomerID(ID);
             String bookedCars = "";
             if (!bookings.isEmpty()) {
                 for (int j = 0; j < bookings.size(); j++) {

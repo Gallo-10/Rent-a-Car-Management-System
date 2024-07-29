@@ -1,14 +1,6 @@
 package BackendCode;
 
-import java.io.EOFException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
+import java.io.*;
 import java.util.ArrayList;
 
 /**
@@ -20,19 +12,18 @@ public class Booking implements Serializable {
     private int ID;
     private Customer customer;
     private Car car;
-    private long RentTime, ReturnTime; // stores System time when the Book() method is called
+    private TimeInterval timeInterval;
 
     public Booking() {
     }
 
-    public Booking(int ID, Customer customer, Car car, long RentTime, long ReturnTime) {
+    public Booking(int ID, Customer customer, Car car, TimeInterval timeInterval) {
         this.ID = ID;
         this.customer = customer;
         this.car = car;
-        this.RentTime = RentTime;
-        this.ReturnTime = ReturnTime;
+        this.timeInterval = timeInterval;
     }
-
+    
     public int getID() {
         return ID;
     }
@@ -57,306 +48,136 @@ public class Booking implements Serializable {
         this.car = car;
     }
 
-    public long getRentTime() {
-        return RentTime;
+    public TimeInterval getTimeInterval() {
+        return timeInterval;
     }
 
-    public void setRentTime(long RentTime) {
-        this.RentTime = RentTime;
+    public void setTimeInterval(TimeInterval timeInterval) {
+        this.timeInterval = timeInterval;
     }
-
-    public long getReturnTime() {
-        return ReturnTime;
+    
+    public long getRentTime(){
+        return timeInterval.getRentTime();
     }
-
-    public void setReturnTime(long ReturnTime) {
-        this.ReturnTime = ReturnTime;
+    
+    public long getReturnTime(){
+        return timeInterval.getReturnTime();
     }
+    
+    public TimeInterval setReturnTime(long x){
+        timeInterval.setReturnTime(x);
+        return null;
+    };
 
     @Override
     public String toString() {
-        return "Booking{" + "ID=" + ID + ", \ncustomer=" + customer.toString() + ", \ncar=" + car.toString() + ", \nRentTime=" + RentTime + ", ReturnTime=" + ReturnTime + '}' + "\n";
+        return "Booking{" + "ID=" + ID + ", \ncustomer=" + customer.toString() + ", \ncar=" + car.toString() + ", \ntimeInterval=" + timeInterval.toString() + '}' + "\n";
     }
 
-    public void Add() {
-        ArrayList<Booking> booking = Booking.View();
-        if (booking.isEmpty()) {
+    public void add() {
+        ArrayList<Booking> bookings = Booking.view();
+        if (bookings.isEmpty()) {
             this.ID = 1;
         } else {
-            this.ID = booking.get(booking.size() - 1).ID + 1; // Auto ID ...
+            this.ID = bookings.get(bookings.size() - 1).ID + 1; // Auto ID ...
         }
-        this.ReturnTime = 0;
-        booking.add(this);
-        File file = new File("Booking.ser");
-        if (!file.exists()) {
-            try {
-                file.createNewFile();
-            } catch (IOException ex) {
-                System.out.println(ex);
-            }
-        }
-        ObjectOutputStream outputStream = null;
-        try {
-            outputStream = new ObjectOutputStream(new FileOutputStream(file));
-            for (int i = 0; i < booking.size(); i++) {
-                outputStream.writeObject(booking.get(i));
-            }
-        } catch (FileNotFoundException ex) {
-            System.out.println(ex);
-        } catch (IOException ex) {
-            System.out.println(ex);
-        } finally {
-            if (outputStream != null) {
-                try {
-                    outputStream.close();
-                } catch (IOException ex) {
-                    System.out.println(ex);
-                }
-            }
-        }
+        bookings.add(this);
+        writeFile(bookings);
     }
 
-    public void Update() {
-        ArrayList<Booking> booking = Booking.View();
+    public void update() {
+        ArrayList<Booking> bookings = Booking.view();
 
-        // for loop for replacing the new Booking object with old one with same ID
-        for (int i = 0; i < booking.size(); i++) {
-            if (booking.get(i).ID == ID) {
-                booking.set(i, this);
+        for (int i = 0; i < bookings.size(); i++) {
+            if (bookings.get(i).ID == ID) {
+                bookings.set(i, this);
             }
         }
 
-        // code for writing new Booking record 
-        ObjectOutputStream outputStream = null;
-        try {
-            outputStream = new ObjectOutputStream(new FileOutputStream("Booking.ser"));
-            for (int i = 0; i < booking.size(); i++) {
-                outputStream.writeObject(booking.get(i));
-            }
-        } catch (FileNotFoundException ex) {
-            System.out.println(ex);
-        } catch (IOException ex) {
-            System.out.println(ex);
-        } finally {
-            if (outputStream != null) {
-                try {
-                    outputStream.close();
-                } catch (IOException ex) {
-                    System.out.println(ex);
-                }
-            }
-        }
+        writeFile(bookings);
     }
 
-    public void Remove() {
+    public void remove() {
+        ArrayList<Booking> bookings = Booking.view();
 
-        ArrayList<Booking> booking = Booking.View();
-        // for loop for deleting the required Booking
-        for (int i = 0; i < booking.size() - 1; i++) {
-            if ((booking.get(i).ID == ID)) {
+        bookings.removeIf(b -> b.ID == this.ID);
 
-                for (int j = i; j < booking.size() - 1; j++) {
-                    booking.set(j, (booking.get(j + 1)));
-                }
-
-            }
-        }
-        // code for writing new Booking record 
-        ObjectOutputStream outputStream = null;
-        try {
-            outputStream = new ObjectOutputStream(new FileOutputStream("Booking.ser"));
-            for (int i = 0; i < booking.size() - 1; i++) {
-                outputStream.writeObject(booking.get(i));
-            }
-        } catch (FileNotFoundException ex) {
-            System.out.println(ex);
-        } catch (IOException ex) {
-            System.out.println(ex);
-        } finally {
-            if (outputStream != null) {
-                try {
-                    outputStream.close();
-                } catch (IOException ex) {
-                    System.out.println(ex);
-                }
-            }
-        }
+        writeFile(bookings);
     }
 
     public int calculateBill() {
-        // rent calculation
-        long rentTime = this.getRentTime();
-        long returnTime = this.getReturnTime();
-        long totalTime = returnTime - rentTime;
-        totalTime = totalTime / (1000 * 60 * 60);
+        long totalTime = timeInterval.getTotalHours();
 
         int rentPerHour = this.getCar().getRentPerHour();
-        if (totalTime != 0) {
-            return (int) (rentPerHour * totalTime);
-        } else {
-            return rentPerHour;
+        return totalTime != 0 ? (int) (rentPerHour * totalTime) : rentPerHour;
+    }
+
+    private static void writeFile(ArrayList<Booking> bookings) {
+        try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream("Booking.ser"))) {
+            for (Booking booking : bookings) {
+                outputStream.writeObject(booking);
+            }
+        } catch (IOException ex) {
+            System.out.println(ex);
         }
     }
 
-    public static ArrayList<Booking> SearchByCustomerID(int CustomerID) {
-        ArrayList<Booking> bookingList = new ArrayList<>(0);
-        ObjectInputStream inputStream = null;
-        try {
-// open file for reading
-            inputStream = new ObjectInputStream(new FileInputStream("Booking.ser"));
+    public static ArrayList<Booking> searchByCustomerID(int customerID) {
+        return searchBookings(booking -> booking.customer.getID() == customerID);
+    }
+
+    public static ArrayList<Booking> searchByCarRegNo(String carRegNo) {
+        return searchBookings(booking -> booking.car.getRegNo().equalsIgnoreCase(carRegNo));
+    }
+
+    public static ArrayList<Booking> searchByCarID(int carID) {
+        return searchBookings(booking -> booking.car.getID() == carID);
+    }
+
+    public static ArrayList<Booking> view() {
+        return searchBookings(null);
+    }
+
+    private static ArrayList<Booking> searchBookings(BookingPredicate predicate) {
+        ArrayList<Booking> bookingList = new ArrayList<>();
+        try (ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream("Booking.ser"))) {
             boolean EOF = false;
-// Keep reading file until file ends
             while (!EOF) {
                 try {
-                    Booking myObj = (Booking) inputStream.readObject();
-                    if (myObj.customer.getID() == CustomerID) {
-                        bookingList.add(myObj);
+                    Booking booking = (Booking) inputStream.readObject();
+                    if (predicate == null || predicate.test(booking)) {
+                        bookingList.add(booking);
                     }
-                } catch (ClassNotFoundException e) {
-                    System.out.println(e);
-                } catch (EOFException end) {
+                } catch (ClassNotFoundException | EOFException e) {
                     EOF = true;
                 }
             }
-        } catch (FileNotFoundException e) {
-            System.out.println(e);
         } catch (IOException e) {
             System.out.println(e);
-        } finally {
-            try {
-                if (inputStream != null) {
-                    inputStream.close();
-                }
-            } catch (IOException e) {
-                System.out.println(e);
-            }
-        }
-        return bookingList;
-    }
-
-    public static ArrayList<Booking> SearchByCarRegNo(String CarRegNo) {
-        ArrayList<Booking> bookingList = new ArrayList<>(0);
-        ObjectInputStream inputStream = null;
-        try {
-// open file for reading
-            inputStream = new ObjectInputStream(new FileInputStream("Booking.ser"));
-            boolean EOF = false;
-// Keep reading file until file ends
-            while (!EOF) {
-                try {
-                    Booking myObj = (Booking) inputStream.readObject();
-                    if (myObj.car.getRegNo().equalsIgnoreCase(CarRegNo)) {
-                        bookingList.add(myObj);
-                    }
-                } catch (ClassNotFoundException e) {
-                    System.out.println(e);
-                } catch (EOFException end) {
-                    EOF = true;
-                }
-            }
-        } catch (FileNotFoundException e) {
-            System.out.println(e);
-        } catch (IOException e) {
-            System.out.println(e);
-        } finally {
-            try {
-                if (inputStream != null) {
-                    inputStream.close();
-                }
-            } catch (IOException e) {
-                System.out.println(e);
-            }
-        }
-        return bookingList;
-    }
-
-    public static ArrayList<Booking> SearchByCarID(int carID) {
-        ArrayList<Booking> bookingList = new ArrayList<>(0);
-        ObjectInputStream inputStream = null;
-        try {
-// open file for reading
-            inputStream = new ObjectInputStream(new FileInputStream("Booking.ser"));
-            boolean EOF = false;
-// Keep reading file until file ends
-            while (!EOF) {
-                try {
-                    Booking myObj = (Booking) inputStream.readObject();
-                    if (myObj.car.getID() == carID) {
-                        bookingList.add(myObj);
-                    }
-                } catch (ClassNotFoundException e) {
-                    System.out.println(e);
-                } catch (EOFException end) {
-                    EOF = true;
-                }
-            }
-        } catch (FileNotFoundException e) {
-            System.out.println(e);
-        } catch (IOException e) {
-            System.out.println(e);
-        } finally {
-            try {
-                if (inputStream != null) {
-                    inputStream.close();
-                }
-            } catch (IOException e) {
-                System.out.println(e);
-            }
-        }
-        return bookingList;
-    }
-
-    public static ArrayList<Booking> View() {
-        ArrayList<Booking> bookingList = new ArrayList<>(0);
-        ObjectInputStream inputStream = null;
-        try {
-// open file for reading
-            inputStream = new ObjectInputStream(new FileInputStream("Booking.ser"));
-            boolean EOF = false;
-// Keep reading file until file ends
-            while (!EOF) {
-                try {
-                    Booking myObj = (Booking) inputStream.readObject();
-                    bookingList.add(myObj);
-                } catch (ClassNotFoundException e) {
-                    System.out.println(e);
-                } catch (EOFException end) {
-                    EOF = true;
-                }
-            }
-        } catch (FileNotFoundException e) {
-            System.out.println(e);
-        } catch (IOException e) {
-            System.out.println(e);
-        } finally {
-            try {
-                if (inputStream != null) {
-                    inputStream.close();
-                }
-            } catch (IOException e) {
-                System.out.println(e);
-            }
         }
         return bookingList;
     }
 
     public static ArrayList<Car> getBookedCars() {
         ArrayList<Car> bookedCars = new ArrayList<>();
-        ArrayList<Booking> bookings = Booking.View();
-        for (int i = 0; i < bookings.size(); i++) {
-            if (bookings.get(i).ReturnTime == 0) {
-                bookedCars.add(bookings.get(i).car);
+        ArrayList<Booking> bookings = Booking.view();
+        for (Booking booking : bookings) {
+            if (booking.timeInterval.getReturnTime() == 0) {
+                bookedCars.add(booking.getCar());
             }
         }
         return bookedCars;
     }
 
     public static ArrayList<Car> getUnbookedCars() {
-        ArrayList<Car> allCars = Car.View();
+        ArrayList<Car> allCars = Car.view();
         ArrayList<Car> bookedCars = Booking.getBookedCars();
-        for (int i = 0; i < bookedCars.size(); i++) {
-            allCars.remove(bookedCars.get(i));
-        }
+        allCars.removeAll(bookedCars);
         return allCars;
+    }
+
+    @FunctionalInterface
+    private interface BookingPredicate {
+        boolean test(Booking booking);
     }
 }

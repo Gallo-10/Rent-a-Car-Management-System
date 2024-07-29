@@ -68,7 +68,7 @@ public class Booking_Details {
         jScrollPane1 = new JScrollPane();
         jScrollPane1.setViewportView(jTable1);
         jTable1.setFillsViewportHeight(true);// makes the size of table equal to that of scroll pane to fill the table in the scrollpane
-        ArrayList<Booking> Booking_objects = Booking.View();
+        ArrayList<Booking> Booking_objects = Booking.view();
         for (int i = 0; i < Booking_objects.size(); i++) {
 //ID,  Maker,  Name,  Colour,  Type,  SeatingCapacity,  Model,  Condition,  RegNo, 
 //RentPerHour,  IsRented RentDate, carOwner customer
@@ -192,7 +192,7 @@ public class Booking_Details {
                         if (Customer.isIDvalid(customerID)) {
                             Customer customer = Customer.SearchByID(Integer.parseInt(customerID));
                             if (customer != null) {
-                                ArrayList<Booking> bookings = Booking.SearchByCustomerID(Integer.parseInt(customerID));
+                                ArrayList<Booking> bookings = Booking.searchByCustomerID(Integer.parseInt(customerID));
                                 if (!bookings.isEmpty()) {
                                     JOptionPane.showMessageDialog(null, bookings.toString());
                                 } else {
@@ -216,7 +216,7 @@ public class Booking_Details {
                         if (Car.isRegNoValid(carRegNo)) {
                             Car car = Car.SearchByRegNo(carRegNo);
                             if (car != null) {
-                                ArrayList<Booking> bookings = Booking.SearchByCarRegNo(carRegNo);
+                                ArrayList<Booking> bookings = Booking.searchByCarRegNo(carRegNo);
                                 if (!bookings.isEmpty()) {
                                     JOptionPane.showMessageDialog(null, bookings.toString());
                                 } else {

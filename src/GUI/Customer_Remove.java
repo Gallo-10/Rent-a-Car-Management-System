@@ -70,10 +70,10 @@ public class Customer_Remove {
                                     + "\n Are you sure you want to continue ??", "Remove Customer", JOptionPane.OK_CANCEL_OPTION);
                             if (showConfirmDialog == 0) {
                                 // Deleting all the booking records of customer
-                                ArrayList<Booking> bookings = Booking.View();
+                                ArrayList<Booking> bookings = Booking.view();
                                 for (int i = 0; i < bookings.size(); i++) {
                                     if (customer.getID() == bookings.get(i).getCustomer().getID()) {
-                                        bookings.get(i).Remove();
+                                        bookings.get(i).remove();
                                     }
                                 }
                                 // ** Delete all cars for this Customer **

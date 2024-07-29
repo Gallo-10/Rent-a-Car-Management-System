@@ -27,6 +27,25 @@ public class Car implements Serializable {
     public Car() {
     }
 
+    @FunctionalInterface
+    public interface CarPredicate {
+
+        boolean test(Car car);
+    }
+
+    public class CarID {
+
+        private final int id;
+
+        public CarID(int id) {
+            this.id = id;
+        }
+
+        public int getId() {
+            return id;
+        }
+    }
+
     public Car(int ID, String Maker, String Name, String Colour, String Type, int SeatingCapacity, String Model, String Condition, String RegNo, int RentPerHour, CarOwner carOwner) {
         this.ID = ID;
         this.Maker = Maker;
@@ -134,108 +153,67 @@ public class Car implements Serializable {
         return "Car_new{" + "ID=" + ID + ", Maker=" + Maker + ", Name=" + Name + ", Colour=" + Colour + ", \nType=" + Type + ", SeatingCapacity=" + SeatingCapacity + ", Model=" + Model + ", Condition=" + Condition + ", RegNo=" + RegNo + ", RentPerHour=" + RentPerHour + ", \ncarOwner=" + carOwner.toString() + '}' + "\n";
     }
 
+    public static ArrayList<Car> view() {
+        return searchCars(null);
+    }
+    
+    public static ArrayList<Car> searchCars(CarPredicate predicate) {
+    ArrayList<Car> carList = new ArrayList<>();
+    try (ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream("Car.ser"))) {
+        boolean EOF = false;
+        while (!EOF) {
+            try {
+                Car car = (Car) inputStream.readObject();
+                if (predicate == null || predicate.test(car)) {
+                    carList.add(car);
+                }
+            } catch (ClassNotFoundException | EOFException e) {
+                EOF = true;
+            }
+        }
+    } catch (IOException e) {
+        System.out.println(e);
+    }
+    return carList;
+}
+
+
     public void Add() {
-        ArrayList<Car> car = Car.View();
+        ArrayList<Car> car = View();
         if (car.isEmpty()) {
             this.ID = 1;
         } else {
-            this.ID = car.get(car.size() - 1).ID + 1; // Auto ID...
+            this.ID = car.get(car.size() - 1).ID + 1;
         }
         car.add(this);
-        File file = new File("Car.ser");
-        if (!file.exists()) {
-            try {
-                file.createNewFile();
-            } catch (IOException ex) {
-                System.out.println(ex);
-            }
-        }
-        ObjectOutputStream outputStream = null;
         try {
-            outputStream = new ObjectOutputStream(new FileOutputStream(file));
-            for (int i = 0; i < car.size(); i++) {
-                outputStream.writeObject(car.get(i));
-            }
-        } catch (FileNotFoundException ex) {
-            System.out.println(ex);
+            writeToFile(car, "Car.ser");
         } catch (IOException ex) {
             System.out.println(ex);
-        } finally {
-            if (outputStream != null) {
-                try {
-                    outputStream.close();
-                } catch (IOException ex) {
-                    System.out.println(ex);
-                }
-            }
         }
     }
 
-    /**
-     * aik new Object bna k us se Update() ka method call krte hein aur us new
-     * object mein jo Car ID hai agar usi ID ki koi car pehle mojood ha tou us
-     * se replace ho jay gi
-     */
     public void Update() {
-        ArrayList<Car> car = Car.View();
-
-        // for loop for replacing the new Car object with old one with same ID
+        ArrayList<Car> car = View();
         for (int i = 0; i < car.size(); i++) {
             if (car.get(i).ID == ID) {
                 car.set(i, this);
             }
         }
-
-        // code for writing new Car record 
-        ObjectOutputStream outputStream = null;
         try {
-            outputStream = new ObjectOutputStream(new FileOutputStream("Car.ser"));
-            for (int i = 0; i < car.size(); i++) {
-                outputStream.writeObject(car.get(i));
-            }
-        } catch (FileNotFoundException ex) {
-            System.out.println(ex);
+            writeToFile(car, "Car.ser");
         } catch (IOException ex) {
             System.out.println(ex);
-        } finally {
-            if (outputStream != null) {
-                try {
-                    outputStream.close();
-                } catch (IOException ex) {
-                    System.out.println(ex);
-                }
-            }
         }
     }
 
     public void Remove() {
-
-        ArrayList<Car> car = Car.View();
-        // for loop for deleting the required Car
-        for (int i = 0; i < car.size(); i++) {
-            if ((car.get(i).ID == ID)) {
-                car.remove(i);
-            }
-        }
-        // code for writing new Car record 
-        ObjectOutputStream outputStream = null;
+        ArrayList<Car> car = View();
+        car.removeIf(c -> c.ID == ID);
         try {
-            outputStream = new ObjectOutputStream(new FileOutputStream("Car.ser"));
-            for (int i = 0; i < car.size(); i++) {
-                outputStream.writeObject(car.get(i));
-            }
-        } catch (FileNotFoundException ex) {
-            System.out.println(ex);
+            writeToFile(car, "Car.ser");
         } catch (IOException ex) {
             System.out.println(ex);
-        } finally {
-            if (outputStream != null) {
-                try {
-                    outputStream.close();
-                } catch (IOException ex) {
-                    System.out.println(ex);
-                }
-            }
         }
     }
 
@@ -308,7 +286,7 @@ public class Car implements Serializable {
         boolean flag = false;
         for (int i = 0; i < Name.length(); i++) {
 //            Name can contain white spaces
-            if (Character.isLetter(Name.charAt(i)) |Character.isDigit(Name.charAt(i))| Name.charAt(i) == ' ') {
+            if (Character.isLetter(Name.charAt(i)) | Character.isDigit(Name.charAt(i)) | Name.charAt(i) == ' ') {
                 flag = true;
             } else {
                 flag = false;
@@ -347,6 +325,26 @@ public class Car implements Serializable {
             }
         }
         return false;
+    }
+
+    private void writeToFile(ArrayList<Car> carList, String fileName) throws IOException {
+        try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(fileName))) {
+            for (Car car : carList) {
+                outputStream.writeObject(car);
+            }
+        }
+    }
+
+    private ArrayList<Car> readFromFile(String fileName) throws IOException, ClassNotFoundException {
+        ArrayList<Car> carList = new ArrayList<>();
+        try (ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(fileName))) {
+            while (true) {
+                carList.add((Car) inputStream.readObject());
+            }
+        } catch (EOFException ignored) {
+            // End of file reached
+        }
+        return carList;
     }
 
 }
